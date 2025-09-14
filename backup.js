@@ -29,7 +29,7 @@ const fetch = require("node-fetch");
 // 🔹 CLIENTE S3 CLOUDFLARE R2
 const client = new S3Client({
   region: "auto",
-  endpoint: process.env.ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: process.env.ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/lfdev001`,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY,
     secretAccessKey: process.env.R2_SECRET_KEY,
@@ -194,4 +194,3 @@ async function sendWhatsAppMessage(text) {
     await sendWhatsAppMessage(`❌ Erro no backup em ${dateStr}\n${err.message}`);
   }
 })();
-    
