@@ -17,7 +17,7 @@ const fetch = require("node-fetch");
 // 🔹 CLIENTE S3 CLOUDFLARE R2
 const client = new S3Client({
     region: "auto",
-    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    endpoint: process.env.ENDPOINT || `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY,
         secretAccessKey: process.env.R2_SECRET_KEY,
