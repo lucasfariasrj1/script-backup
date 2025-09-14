@@ -1,0 +1,11 @@
+{
+    "name": "backup",
+    "version": "1.0.0",
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.541.0",
+        "archiver": "^6.0.1",
+        "dotenv": "^16.4.5",
+        "fs-extra": "^11.1.1",
+        "node-fetch": "^2.7.0"
+    }
+}
