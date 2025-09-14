@@ -1,21 +1,21 @@
+require("dotenv").config();
 const fs = require("fs-extra");
 const path = require("path");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const archiver = require("archiver");
-const dotenv = require("dotenv");
 const fetch = require("node-fetch");
 
-dotenv.config();;
-
+// 🔹 Cliente S3 (Cloudflare R2)
 const client = new S3Client({
     region: "auto",
-    endpoint: process.env.ENDPOINT,
+    endpoint: process.env.ENDPOINT, // ex: https://<ACCOUNT_ID>.r2.cloudflarestorage.com
     credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY,
         secretAccessKey: process.env.R2_SECRET_KEY,
     },
 });
 
+// 🔹 Datas
 const today = new Date();
 const day = String(today.getDate()).padStart(2, "0");
 const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -31,6 +31,7 @@ const timestamp = `${day}-${month}-${year}_${hour}-${minute}-${second}`;
 
 let telegramReport = `📦 *Backup automático - ${dateStr}*\n🕒 Horário: ${timeStr}\n\n`;
 
+// 🔹 Compacta diretório
 async function zipDirectory(source, out) {
     const archive = archiver("zip", { zlib: { level: 9 } });
     const stream = fs.createWriteStream(out);
@@ -50,6 +51,7 @@ async function zipDirectory(source, out) {
     });
 }
 
+// 🔹 Upload para R2
 async function uploadToR2(localPath, remoteName) {
     const stream = fs.createReadStream(localPath);
     const command = new PutObjectCommand({
@@ -63,6 +65,7 @@ async function uploadToR2(localPath, remoteName) {
     console.log(`✅ Enviado para R2: ${remoteName}`);
 }
 
+// 🔹 Faz backup dos diretórios
 async function backupDirectories(basePath, label) {
     const folders = fs.readdirSync(basePath).filter(f =>
         fs.statSync(path.join(basePath, f)).isDirectory()
@@ -83,10 +86,11 @@ async function backupDirectories(basePath, label) {
     }
 }
 
+// 🔹 Envia mensagem no Telegram
 async function sendTelegramMessage(text) {
-    const token = process.env.TOKEN;
-    const chatId = process.env.CHATID;
-    const url = "https://api.telegram.org/bot${token}/sendMessage";
+    const token = process.env.TELEGRAM_TOKEN;
+    const chatId = process.env.TELEGRAM_CHATID;
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
     try {
         const res = await fetch(url, {
@@ -110,7 +114,8 @@ async function sendTelegramMessage(text) {
     }
 }
 
-(async() => {
+// 🔹 Execução principal
+(async () => {
     try {
         console.log("🔄 Iniciando backup de diretórios...");
         await backupDirectories("/var/www/html", "html");

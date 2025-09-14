@@ -1,3 +1,4 @@
+require("dotenv").config(); // carrega variáveis do .env
 const fs = require("fs-extra");
 const path = require("path");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
@@ -5,18 +6,19 @@ const archiver = require("archiver");
 const { execSync } = require("child_process");
 const fetch = require("node-fetch");
 
-// CREDENCIAIS E CONFIGS
-const DB_HOST = "localhost";
-const DB_PORT = "3306";
-const DB_USER = "backup";
-const DB_PASS = "A!suptry@1809";
+// 🔹 CONFIGS DO BANCO (pega do .env)
+const DB_HOST = process.env.DB_HOST || "localhost";
+const DB_PORT = process.env.DB_PORT || "3306";
+const DB_USER = process.env.DB_USER || "root";
+const DB_PASS = process.env.DB_PASS || "";
 
+// 🔹 CONFIGS CLOUDFLARE R2
 const R2_ACCESS_KEY = process.env.R2_ACCESS_KEY;
 const R2_SECRET_KEY = process.env.R2_SECRET_KEY;
-const R2_BUCKET = process.env.R2_BUCKET
+const R2_BUCKET = process.env.R2_BUCKET;
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 
-// CLIENTE S3 PARA R2
+// 🔹 CLIENTE S3 PARA R2
 const client = new S3Client({
     region: "auto",
     endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -26,7 +28,7 @@ const client = new S3Client({
     },
 });
 
-// DATA ATUAL
+// 🔹 DATA ATUAL
 const today = new Date();
 const day = String(today.getDate()).padStart(2, "0");
 const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -37,7 +39,7 @@ const second = String(today.getSeconds()).padStart(2, "0");
 const dateStr = `${day}-${month}-${year}`;
 const timeStr = `${hour}-${minute}-${second}`;
 
-// ZIPA O ARQUIVO
+// 🔹 ZIPA O ARQUIVO
 async function zipFile(sourceFile, outputZip) {
     const archive = archiver("zip", { zlib: { level: 9 } });
     const stream = fs.createWriteStream(outputZip);
@@ -50,7 +52,7 @@ async function zipFile(sourceFile, outputZip) {
     });
 }
 
-// ENVIA PARA R2
+// 🔹 ENVIA PARA R2
 async function uploadToR2(localPath, remoteName) {
     const stream = fs.createReadStream(localPath);
     const command = new PutObjectCommand({
@@ -64,11 +66,11 @@ async function uploadToR2(localPath, remoteName) {
     console.log(`✅ Enviado para R2: ${remoteName}`);
 }
 
-// BACKUP DO MYSQL
+// 🔹 BACKUP DO MYSQL
 async function backupMySQLDatabases() {
     const databasesRaw = execSync(
-            `mysql -h${DB_HOST} -P${DB_PORT} -u${DB_USER} -p${DB_PASS} -e "SHOW DATABASES;"`
-        )
+        `mysql -h${DB_HOST} -P${DB_PORT} -u${DB_USER} -p${DB_PASS} -e "SHOW DATABASES;"`
+    )
         .toString()
         .split("\n")
         .slice(1)
@@ -93,11 +95,11 @@ async function backupMySQLDatabases() {
     }
 }
 
-// NOTIFICA NO TELEGRAM
+// 🔹 NOTIFICA NO TELEGRAM
 async function sendTelegramMessage(text) {
-    const token = process.env.TOKEN;
-    const chatId = process.env.CHATID;
-    const url = = 'https://api.telegram.org/bot${token}/sendMessage';
+    const token = process.env.TELEGRAM_TOKEN;
+    const chatId = process.env.TELEGRAM_CHATID;
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
     try {
         const res = await fetch(url, {
@@ -121,16 +123,16 @@ async function sendTelegramMessage(text) {
     }
 }
 
-// EXECUÇÃO
-(async() => {
+// 🔹 EXECUÇÃO
+(async () => {
     try {
         console.log("💾 Iniciando backup dos bancos de dados...");
         await backupMySQLDatabases();
 
         console.log("✅ Backup concluído com sucesso.");
-        await sendTelegramMessage(`✅ Backup de banco concluído com sucesso em ${dateStr} às ${hour}:${minute}:${second}`);
+        await sendTelegramMessage(`✅ Backup concluído em ${dateStr} às ${hour}:${minute}:${second}`);
     } catch (err) {
         console.error("❌ Erro no processo de backup:", err);
-        await sendTelegramMessage(`❌ Erro ao realizar backup de banco em ${dateStr}`);
+        await sendTelegramMessage(`❌ Erro ao realizar backup em ${dateStr}`);
     }
 })();
