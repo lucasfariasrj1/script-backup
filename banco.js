@@ -97,7 +97,7 @@ async function backupMySQLDatabases() {
 async function sendTelegramMessage(text) {
     const token = process.env.TOKEN;
     const chatId = process.env.CHATID;
-    const url = process.env.URL;
+    const url = = 'https://api.telegram.org/bot${token}/sendMessage';
 
     try {
         const res = await fetch(url, {
